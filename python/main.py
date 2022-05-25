@@ -228,6 +228,34 @@ async def get_image(image_filename: str):
     return FileResponse(image)
 
 
+@app.get("/user-external-history/{user_id}")
+def get_user_external_history(user_id: int):
+    logger.info("Received get_user_external_history request.")
+    try:
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT 
+            external_purchase_history.id as historyId, 
+            external_purchase_history.name as itemName, 
+            external_purchase_history.image_filename as imageFilename, 
+            source.name as sourceName 
+            FROM 
+            external_purchase_history INNER JOIN source
+            ON 
+            external_purchase_history.source_id = source.id
+            WHERE
+            external_purchase_history.user_id = (?)
+            LIMIT 5
+        ''', (user_id, ))
+        items = cur.fetchall()
+        item_list = [dict(item) for item in items]
+        items_json = {"purchased items": item_list}
+        logger.info("Returning up to 5 external purchased items.")
+        return items_json
+    except Exception as e:
+        logger.warn(f"Failed to get user external purchase history. Error message: {e}")   
+        return ERR_MSG
 
 @app.on_event("shutdown")
 def disconnect_database():
