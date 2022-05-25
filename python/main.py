@@ -227,27 +227,6 @@ async def get_image(image_filename: str):
 
     return FileResponse(image)
 
-# Purchase history feature
-@app.get("/history")
-def get_history():
-    logger.info("Received get_history request.")
-    try:
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute('''
-            SELECT items.id, items.name, category.name as category, items.image_filename 
-            FROM history INNER JOIN category 
-            ON category.id = items.category_id
-            LIMIT 5
-        ''')
-        items = cur.fetchall()
-        item_list = [dict(item) for item in items]
-        items_json = {"items": item_list}
-        logger.info("Returning all items.")
-        return items_json
-    except Exception as e:
-        logger.warn(f"Failed to get items. Error message: {e}")   
-        return ERR_MSG
 
 
 @app.on_event("shutdown")
