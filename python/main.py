@@ -234,6 +234,10 @@ def get_user_external_history(user_id: int):
     try:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
+        cur.execute('''SELECT * FROM user WHERE id = (?)''', (user_id, ))
+        user_result = cur.fetchone()
+        if (user_result is None):
+            raise HTTPException(status_code=404, detail="User not found")
         cur.execute('''
             SELECT 
             external_purchase_history.id as historyId, 
@@ -253,6 +257,9 @@ def get_user_external_history(user_id: int):
         items_json = {"purchased items": item_list}
         logger.info("Returning up to 5 external purchased items.")
         return items_json
+    except HTTPException:
+        logger.info("Failed to get user external purchase history: User not found")
+        return "User not found"
     except Exception as e:
         logger.warn(f"Failed to get user external purchase history. Error message: {e}")   
         return ERR_MSG
